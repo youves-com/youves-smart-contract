@@ -1,0 +1,647 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Welcome to Youves Tracker Platform’s documentation! &#8212; Youves Tracker Platform v0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="module-tracker.fa2">
+<span id="welcome-to-youves-tracker-platform-s-documentation"></span><h1>Welcome to Youves Tracker Platform’s documentation!<a class="headerlink" href="#module-tracker.fa2" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableFA2">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">AdministrableFA2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">administrators</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableFA2" title="Permalink to this definition">¶</a></dt>
+<dd><p>FA2 Contract with administrators per token</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableFA2.burn">
+<span class="sig-name descname"><span class="pre">burn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipient_token_amount</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableFA2.burn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows to mint new tokens to the specified reciepient address, only a token administrator can do this
+Pre: verify_is_admin(recipient_token_amount.token_id)
+Pre: storage.ledger[LedgerKey(recipient_token_amount.owner, recipient_token_amount.token_id)] &gt;= recipient_token_amount.token_amount
+Post: storage.ledger[LedgerKey(recipient_token_amount.owner, recipient_token_amount.token_id)] -= recipient_token_amount.token_amount</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>recipient_token_amount</strong> (<a class="reference internal" href="#tracker.fa2.RecipientTokenAmount" title="tracker.fa2.RecipientTokenAmount"><em>RecipientTokenAmount</em></a>) – a record that has owner, token_amount and token_id</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableFA2.get_init_storage">
+<span class="sig-name descname"><span class="pre">get_init_storage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableFA2.get_init_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the initial storage of the contract used for inheritance of smartpy contracts</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>initial storage of the contract</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableFA2.mint">
+<span class="sig-name descname"><span class="pre">mint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipient_token_amount</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableFA2.mint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allows to mint new tokens to the specified reciepient address, only a token administrator can do this
+Pre: verify_is_admin(recipient_token_amount.token_id)
+Post: storage.ledger[LedgerKey(recipient_token_amount.owner, recipient_token_amount.token_id)] += recipient_token_amount.token_amount</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>recipient_token_amount</strong> (<a class="reference internal" href="#tracker.fa2.RecipientTokenAmount" title="tracker.fa2.RecipientTokenAmount"><em>RecipientTokenAmount</em></a>) – a record that has owner, token_amount and token_id</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableFA2.set_token_metadata">
+<span class="sig-name descname"><span class="pre">set_token_metadata</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token_metadata</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableFA2.set_token_metadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only an admin for token id 0 can call this entrypoint. It will set the token_metadata of the token if it was not already previously set and also set the sender as the admin.
+Pre: verify_is_admin(0)
+Post: storage.token_metadata[token_metadata.id] = token_metadata
+Post: storage.administrator[LedgerKey(sp.sender, token_metadata.id)] = sp.unit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>token_metadata</strong> (<a class="reference internal" href="#tracker.fa2.TokenMetadata" title="tracker.fa2.TokenMetadata"><em>TokenMetadata</em></a>) – the token metadata to set</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableMixin">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">AdministrableMixin</span></span><a class="headerlink" href="#tracker.fa2.AdministrableMixin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mixin used to compose andministrable functionality of a contract. Still requires the inerhiting contract to define the apropiate storage.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableMixin.execute">
+<span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">execution_payload</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableMixin.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only an admin for token_id 0 can call this entrypoint. It executes in the name of the contract the lambda stored in the execution payload.
+This is used for upgreadability/migrations.
+Pre: verify_is_admin(0)
+Post: push execution_payload on execution stack</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>execution_payload</strong> (<em>sp.TLambda</em><em>(</em><em>sp.TUnit</em><em>, </em><em>sp.TList</em><em>(</em><em>sp.TOperation</em><em>)</em><em>)</em>) – the lambda to execute</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableMixin.remove_administrator">
+<span class="sig-name descname"><span class="pre">remove_administrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">administrator_to_remove</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableMixin.remove_administrator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only an existing admin can call this entrypoint. This removes a administrator entry entirely from the map (even the executing admin if requested)
+Pre: verify_is_admin(token_id)
+Post: del storage.administrators[LedgerKey(administrator_to_set, token_id)]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token_id</strong> (<em>sp.nat</em>) – token id</p></li>
+<li><p><strong>administrator_to_remove</strong> (<em>sp.address</em>) – the administrator that should be removed</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.AdministrableMixin.set_administrator">
+<span class="sig-name descname"><span class="pre">set_administrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">administrator_to_set</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.AdministrableMixin.set_administrator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only an existing admin can call this entrypoint. If the sender is correct the new admin is set
+Pre: verify_is_admin(token_id)
+Post: storage.administrators[LedgerKey(administrator_to_set, token_id)] = sp.unit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token_id</strong> (<em>sp.nat</em>) – token id</p></li>
+<li><p><strong>administrator_to_set</strong> (<em>sp.address</em>) – the administrator that should be set</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.BalanceOf">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">BalanceOf</span></span><a class="headerlink" href="#tracker.fa2.BalanceOf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Balance of object as per FA2 standard</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.BalanceOf.get_response_type">
+<span class="sig-name descname"><span class="pre">get_response_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.BalanceOf.get_response_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the balance_of reponse type, layouted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>balance_of reponse type, layouted as per FA2</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.BalanceOf.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.BalanceOf.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the balance_of type, layouted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>balance_of type, layouted as per FA2</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.BalanceOf.make_one_request">
+<span class="sig-name descname"><span class="pre">make_one_request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">callback</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.BalanceOf.make_one_request" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the balance_of request payload for a single ledger_key</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ledger_key</strong> (<a class="reference internal" href="#tracker.fa2.LedgerKey" title="tracker.fa2.LedgerKey"><em>LedgerKey</em></a>) – the ledger key you are interested in</p></li>
+<li><p><strong>callback</strong> (<em>sp.TContract</em>) – the callback to be used to return the balance_of response</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>balance_of request payload for a signle ledger key, typed.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sp.record</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.BaseFA2">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">BaseFA2</span></span><a class="headerlink" href="#tracker.fa2.BaseFA2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base FA2 contract, which implements the required entry points</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.BaseFA2.balance_of">
+<span class="sig-name descname"><span class="pre">balance_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">balance_of_request</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.BaseFA2.balance_of" title="Permalink to this definition">¶</a></dt>
+<dd><p>This entrypoint as per FA2 standard, takes balance_of requests and reponds on the provided callback contract.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>balance_of_request</strong> (<a class="reference internal" href="#tracker.fa2.BalanceOf" title="tracker.fa2.BalanceOf"><em>BalanceOf</em></a>) – the request</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.BaseFA2.get_init_storage">
+<span class="sig-name descname"><span class="pre">get_init_storage</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.BaseFA2.get_init_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the initial storage of the contract used for inheritance of smartpy contracts</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>initial storage of the contract</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.BaseFA2.transfer">
+<span class="sig-name descname"><span class="pre">transfer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">transfers</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.BaseFA2.transfer" title="Permalink to this definition">¶</a></dt>
+<dd><p>entrypoint to perform one or multiple transfers. Compatible with FA2 standard
+Pre: storage.ledger[LedgerKey(transfer._from, transfer.txs.token_id)] &gt;= transfer.txs.token_amount
+Pre: sp.sender == transfer._from || storage.operators.contains(OperatorKey(transfer._from, sp.sender, transfer.txs.token_id))
+Post: storage.ledger[LedgerKey(transfer._from, transfer.txs.token_id)] -= transfer.txs.token_amount
+Post: storage.ledger[LedgerKey(<a href="#id1"><span class="problematic" id="id2">transfer.txs.to_</span></a>, transfer.txs.token_id)] += transfer.txs.token_amount</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>transfers</strong> (<em>sp.list</em><em>(</em><a class="reference internal" href="#tracker.fa2.Transfer" title="tracker.fa2.Transfer"><em>Transfer</em></a><em>)</em>) – batch transfer type</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.BaseFA2.update_operators">
+<span class="sig-name descname"><span class="pre">update_operators</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">update_operators</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.BaseFA2.update_operators" title="Permalink to this definition">¶</a></dt>
+<dd><p>As per FA2 standard, allows a token owner to set an operator who will be allowed to perform transfers on her/his behalf</p>
+<p>Pre: update_operator.add_operator.owner == sp.sender
+Pre: update_operator.remove_operator.owner == sp.sender
+Post: set storage.operators[OperatorKey(update_operator.add_operator.owner, update_operator.add_operator.operator, update_operator.add_operator.token_id)]
+Post: set storage.operators[OperatorKey(update_operator.remove_operator.owner, update_operator.remove_operator.operator, update_operator.remove_operator.token_id)]</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>update_operators</strong> (<em>sp.list</em><em>(</em><a class="reference internal" href="#tracker.fa2.UpdateOperator" title="tracker.fa2.UpdateOperator"><em>UpdateOperator</em></a><em>)</em>) – batch update operator type</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.FA2ErrorMessage">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">FA2ErrorMessage</span></span><a class="headerlink" href="#tracker.fa2.FA2ErrorMessage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Static enum used for the FA2 related errors, using the <cite>FA2_</cite> prefix</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tracker.fa2.FA2ErrorMessage.INSUFFICIENT_BALANCE">
+<span class="sig-name descname"><span class="pre">INSUFFICIENT_BALANCE</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'FA2_INSUFFICIENT_BALANCE'</span></em><a class="headerlink" href="#tracker.fa2.FA2ErrorMessage.INSUFFICIENT_BALANCE" title="Permalink to this definition">¶</a></dt>
+<dd><p>This error is thrown if the source address transfers an amount that exceeds its balance</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tracker.fa2.FA2ErrorMessage.NOT_OPERATOR">
+<span class="sig-name descname"><span class="pre">NOT_OPERATOR</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'FA2_NOT_OPERATOR'</span></em><a class="headerlink" href="#tracker.fa2.FA2ErrorMessage.NOT_OPERATOR" title="Permalink to this definition">¶</a></dt>
+<dd><p>This error is thrown if neither token owner nor permitted operators are trying to transfer an amount</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tracker.fa2.FA2ErrorMessage.NOT_OWNER">
+<span class="sig-name descname"><span class="pre">NOT_OWNER</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'FA2_NOT_OWNER'</span></em><a class="headerlink" href="#tracker.fa2.FA2ErrorMessage.NOT_OWNER" title="Permalink to this definition">¶</a></dt>
+<dd><p>This error is thrown if not the owner is performing an action that he/she shouldn’t</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="tracker.fa2.FA2ErrorMessage.TOKEN_UNDEFINED">
+<span class="sig-name descname"><span class="pre">TOKEN_UNDEFINED</span></span><em class="property"> <span class="pre">=</span> <span class="pre">'FA2_TOKEN_UNDEFINED'</span></em><a class="headerlink" href="#tracker.fa2.FA2ErrorMessage.TOKEN_UNDEFINED" title="Permalink to this definition">¶</a></dt>
+<dd><p>This error is thrown if the token id used in to defined</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.LedgerKey">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">LedgerKey</span></span><a class="headerlink" href="#tracker.fa2.LedgerKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Ledger key used when looking up balances</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.LedgerKey.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.LedgerKey.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a single ledger key type, layouted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>layouted type of a ledger lookup key</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.LedgerKey.make">
+<span class="sig-name descname"><span class="pre">make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.LedgerKey.make" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a typed ledger key</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token_id</strong> (<em>sp.nat</em>) – the token id</p></li>
+<li><p><strong>owner</strong> (<em>sp.address</em>) – address of the owner</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>typed ledger key</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sp.record</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.OperatorKey">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">OperatorKey</span></span><a class="headerlink" href="#tracker.fa2.OperatorKey" title="Permalink to this definition">¶</a></dt>
+<dd><p>Operator key used when looking up operation permissions</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.OperatorKey.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.OperatorKey.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a single operator key type, layouted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>single operator key type, layouted</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.OperatorKey.make">
+<span class="sig-name descname"><span class="pre">make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operator</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.OperatorKey.make" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a typed operator key</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>token_id</strong> (<em>sp.nat</em>) – token id</p></li>
+<li><p><strong>owner</strong> (<em>sp.address</em>) – owner address</p></li>
+<li><p><strong>operator</strong> (<em>sp.address</em>) – operator</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>typed operator key</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sp.record</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.RecipientTokenAmount">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">RecipientTokenAmount</span></span><a class="headerlink" href="#tracker.fa2.RecipientTokenAmount" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper type used whenever amount, recipient and token id needs to be defined</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.RecipientTokenAmount.get_batch_type">
+<span class="sig-name descname"><span class="pre">get_batch_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.RecipientTokenAmount.get_batch_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of the token amount type</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>the token amount list type</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TList</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.RecipientTokenAmount.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.RecipientTokenAmount.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the token amount type</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>[description]</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.RecipientTokenAmount.make">
+<span class="sig-name descname"><span class="pre">make</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">token_amount</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.RecipientTokenAmount.make" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a typed token amount</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>owner</strong> (<em>sp.address</em>) – owner</p></li>
+<li><p><strong>token_id</strong> (<em>sp.nat</em>) – token id</p></li>
+<li><p><strong>token_amount</strong> (<em>sp.nat</em>) – amount</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>typed token amount</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>sp.record</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.TokenMetadata">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">TokenMetadata</span></span><a class="headerlink" href="#tracker.fa2.TokenMetadata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Token metadata object as per FA2 standard</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.TokenMetadata.get_batch_type">
+<span class="sig-name descname"><span class="pre">get_batch_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.TokenMetadata.get_batch_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list type containing token metadata types</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>smartpy type of a list of tokenmetadata</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TList</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.TokenMetadata.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.TokenMetadata.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a single token metadata type, layouted as per token metadata</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>single token metadata type, layouted</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.Transfer">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">Transfer</span></span><a class="headerlink" href="#tracker.fa2.Transfer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transfer object as per FA2 standard</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.Transfer.get_batch_type">
+<span class="sig-name descname"><span class="pre">get_batch_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.Transfer.get_batch_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list type containing transfer types</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list type containing transfer types</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TList</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.Transfer.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.Transfer.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a single transfer type, layouted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>single transfer type, layouted</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.Transfer.item">
+<span class="sig-name descname"><span class="pre">item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">txs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.Transfer.item" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a typed transfer item as per FA2 specification</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>from</strong> (<em>sp.address</em>) – address of the sender</p></li>
+<li><p><strong>txs</strong> (<em>dict</em>) – dictionary containing the keys “<a href="#id3"><span class="problematic" id="id4">to_</span></a>” (the recipient), “token_id” (id to transfer), and “amount” (amount of token to transfer)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>transfer sp.record typed</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#tracker.fa2.Transfer" title="tracker.fa2.Transfer">Transfer</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tracker.fa2.UpdateOperator">
+<em class="property"><span class="pre">class</span> </em><span class="sig-prename descclassname"><span class="pre">tracker.fa2.</span></span><span class="sig-name descname"><span class="pre">UpdateOperator</span></span><a class="headerlink" href="#tracker.fa2.UpdateOperator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update operators object as per FA2 standard</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.UpdateOperator.get_batch_type">
+<span class="sig-name descname"><span class="pre">get_batch_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.UpdateOperator.get_batch_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list type containing update operator types</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>list type containing update operator types</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TList</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.UpdateOperator.get_operator_param_type">
+<span class="sig-name descname"><span class="pre">get_operator_param_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.UpdateOperator.get_operator_param_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters included in the update operator request</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>layouted to match the FA2 standard</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TRecord</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tracker.fa2.UpdateOperator.get_type">
+<span class="sig-name descname"><span class="pre">get_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.fa2.UpdateOperator.get_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a single update operator type, layouted</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>single update operator type, layouted</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>sp.TVariant</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-tracker.deployment"></span><dl class="py function">
+<dt class="sig sig-object py" id="tracker.deployment.main">
+<span class="sig-prename descclassname"><span class="pre">tracker.deployment.</span></span><span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#tracker.deployment.main" title="Permalink to this definition">¶</a></dt>
+<dd><p>This script deploys the contracts, wires them and performs calls tries to call some of the methods.</p>
+</dd></dl>
+
+<div class="toctree-wrapper compound">
+</div>
+</section>
+<section id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="#">Youves Tracker Platform</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2021, Alessandro De Carli, Mike Godenzi, Werner Broennimann.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.0.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

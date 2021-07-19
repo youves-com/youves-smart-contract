@@ -1,0 +1,23 @@
+Welcome to Youves Tracker Platform's documentation!
+===================================================
+.. automodule:: tracker.fa2
+    :members:
+
+.. automodule:: tracker.compiler
+    :members:
+
+.. automodule:: tracker.deployment
+    :members:
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
