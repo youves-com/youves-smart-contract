@@ -1,0 +1,9 @@
+{
+    "symbol": "uBTC",
+    "name": "youves uBTC",
+    "decimals": 12,
+    "thumbnail_uri": "ipfs://Qmbev41h4axBqVzxsXP2NSaAF996bJjJBPb8FFZVqTvJTY",
+    "is_transferable": true,
+    "is_boolean_amount": false,
+    "should_prefer_symbol": true
+}
