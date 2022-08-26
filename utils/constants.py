@@ -1,0 +1,67 @@
+import smartpy as sp
+
+ASK_FEE_BITSHIFT = 2  # expressed in bitshifts ==> 2**-2 ~= 25 % fee
+BID_FEE_BITSHIFT = 4  # expressed in bitshifts ==> 2**-4 ~= 6.25 % fee
+
+ADVERTISE_TIME_WINDOW_IN_SECONDS = 24 * 60 * 60  # 1 day
+OPTION_TIME_WINDOW_IN_SECONDS = 2 * 24 * 60 * 60  # 2 days
+
+DECIMALS = 12
+PRECISION_FACTOR = 10**DECIMALS  # use base 2 for bitshifts
+
+MAX_STABLE_TOKEN_BITSHIFT = 2  # 25%
+
+SCALING_FACTOR_ONE = 2
+SCALING_FACTOR_TWO = 35
+
+SECONDS_INTEREST_SPREAD = 316  # (1+(316/10**12))**(60*60*24*365) --> approx 1% yearly
+SECONDS_INTEREST_MINIMUM = (
+    128  # (1+(128/10**12))**(60*60*24*365) --> approx 0.4% yearly
+)
+SECONDS_INTEREST_MAXIMUM = (
+    8192  # (1+(8192/10**12))**(60*60*24*365) --> approx 29.5% yearly
+)
+
+FX_MULTIPLIER = 100
+
+REFERENCE_INTEREST_UPDATE_INTERVAL = 7 * 24 * 60 * 60  # 7 days
+REFERENCE_INTEREST_UPDATE_LINEAR_INTERVAL = 12 * 60 * 60  # 12 hours
+
+TARGET_COLLATERALIZATION_FACTOR = 3
+EMERGENCY_COLLATERALIZATION_FACTOR = 2
+
+MINTING_FEE_BITSHIFT = 6  # expressed in bitshifts ==> 2**-6 ~= 1.56 % fee
+LIQUIDATION_REWARD_BITSHIFT = 3  # expressed in bitshifts ==> 2**-3 = 12.5 % fee
+TREASURY_REWARD_BITSHIFT = 3  # expressed in bitshifts ==> 2**-3 = 12.5 % reward
+
+SECONDS_PER_WEEK = 7 * 24 * 60 * 60
+
+GOVERNANCE_TOKEN_ISSUANCE_RATE = 66137566137  # (40000*10**12)/(7*24*60*60)
+DEFAULT_ADDRESS = sp.address("tz1RKmJwoAiaqFdjQYSbFy1j7u7UhEFsqXq7")
+
+GOVERNANCE_TOKEN_ID = sp.nat(0)
+DEFAULT_TOKEN_ID = sp.nat(0)
+
+ISSUANCE_PHASE_INTERVAL = 364 * 24 * 60 * 60
+MIN_AMOUNT_THRESHOLD = sp.mutez(1000)  # this is used to mitigate drainage attacks
+MIN_TOKEN_AMOUNT_THRESHOLD = (
+    1000001  # this is used to mitigate drainage attacks, previously set to 10**9
+)
+MIN_COLLATERAL_AMOUNT_THRESHOLD = 1
+
+DEFAULT_VESTING_DURATION_IN_SECONDS = 6 * SECONDS_PER_WEEK
+
+LINEAR_RESPONSE_FACTOR = -1269
+MAX_LINEAR_RESPONSE_STEP = 126
+MIN_LINEAR_RESPONSE_STEP = -126
+
+TOKEN_TYPE_FA1 = "FA1"
+TOKEN_TYPE_FA2 = "FA2"
+TOKEN_TYPE_TEZ = "TEZ"
+
+ORACLE_EPOCH_INTERVAL = 900  # this is 15 minutes
+PRICE_PRECISION_SHIFT = 10
+PRICE_PRECISION_FACTOR = 10**6
+PRICE_EXTRA_PRECISION_FACTOR = (
+    10**6
+)  # this factor is used when the price does not fit in the given price factor.
