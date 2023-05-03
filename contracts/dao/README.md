@@ -1,6 +1,6 @@
 # Youves DAO
 
-Youves DAO is the implementation of the DAO for the Youves platform. The DAO is used to govern [YOU tokens](https://app.youves.com).
+Youves DAO is the implementation of the DAO for the Youves platform. The DAO is used to govern [youves](https://app.youves.com).
 
 Youves DAO allows YOU holders to use their stakes (held in the unified staking contract) to vote on a proposal.
 If the vote passes, then the proposal is moved into a timelock.
@@ -17,15 +17,12 @@ A proposal goes through several phases in Murmuration:
 4. After a timelock period, the proposal may be executed by the user who submitted it. 
 5. After a cancellation period, the proposal may be cancelled by any user. 
 
-In addition, the DAO have a break glass contract that may help to expedite proposals, by reducing
-the voting & waiting time.
+In addition, the DAO has a break glass contract that may help to expedite proposals, by reducing
+the voting & waiting time and that is able to veto and cancel a proposal during the timelock period.
 
 ## Design Rational
 
-Youves takes an opinionated approach to governance and for a period of time the
-glass breaker contract can still veto a proposal even if it met the majority to be
-executed. This is made to make sure the community understands how the DAO works
-and what are the necessary knowledge steps in order to make Youves a sucessfull DAO.
+Youves takes an opinionated approach to governance and for an initial period of time the glass breaker contract can still veto a proposal even if it met the majority to be executed. The glass breaker contract is measure of last resort in the early life of the new DAO. It gives the youves team and the multisig keyholders the ability to shorten the voting process for emergency proposals and to veto against a proposal in case the DAO contract is misused or unexpected problems do arise which need immediate action.
 
 ## Voting/Voting Contract
 Users can vote on a proposal using their staked YOUs in the unified staking contract. Therefore, in
@@ -50,22 +47,21 @@ After the conversion, there is a check to see if the quorum is met, and the prop
 it is moved into the timelock or it is canceled.
 
 ## Timelock
-After a proposal passes it is move into the timelock. During this period, a break glass contract can
-veto the proposal (this is just a preliminary precaution that Youves is taking in order to ensure that
-the community is using the DAO correctly). The break glass contract can only intervine between the time
+After a proposal passes it is moved into the timelock. During this period, the break glass contract can
+veto the proposal. The break glass contract can only intervene between the time
 a proposal is added to the timelock and the timelock is executed by the proposer.
 
 ### Execution
-After a certain amount of time (counted in blocks), the propers and only the proposer can execute the proposal.
+After a certain amount of time (counted in blocks), the proposer and only the proposer can execute the proposal.
 
-### Cancelation
+### Cancellation
 After a cancellation period, the proposal may be cancelled by any user, in order to ensure that the timelock is
-open for future proposals. The proposer will always have the oportunity to execute the timelock before it can
-be canceled.
+open for future proposals. The proposer will always have the opportunity to execute the timelock before it can
+be cancelled.
 
 ## Spam Prevention
 
-Youves only allows a single poll to be underway at a time. As such, users may front run polls as a denial of service attack to prevent real proposals from being put forth. 
+The youves DAO only allows a single poll to be underway at a time. As such, users may front run polls as a denial of service attack to prevent real proposals from being put forth. 
 
 To prevent this attack, Youves escrows a number of tez/tokens from the user when they make a proposal. If the proposal does not achieve a minimum number of 'Yes' votes, the escrowed tokens are confiscated, otherwise they are returned to the user at the conclusion of a poll. 
 
