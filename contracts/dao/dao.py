@@ -32,7 +32,7 @@ Storage:
         stakes used in voting.
     - historical_outcomes (sp.TBigMap(sp.TNat, PROPOSAL_OUTCOME_TYPE)) - history of the proposals
         and their outcomes.
-    - break_glass_contract (sp.TAddress) - break glass contract used to expedite certain proposals
+    - break_glass_contract (sp.TOption(sp.TAddress)) - break glass contract used to expedite certain proposals
         or veto proposals.
     - metadata (sp.TBigMap(sp.TString, sp.TBytes)) - contract metadata.
 """
@@ -57,7 +57,7 @@ class DAOContract(sp.Contract):
         community_fund_address = Constants.DEFAULT_ADDRESS,
         historical_outcomes = sp.big_map(l={}, tkey = sp.TNat, tvalue = ProposalOutcome.PROPOSAL_OUTCOME_TYPE),
         vote_tracker = sp.big_map(l={}, tkey = VoteTracker.KEY_TYPE, tvalue = VoteTracker.VALUE_TYPE),
-        break_glass_contract = Constants.DEFAULT_ADDRESS,
+        break_glass_contract = sp.some(Constants.DEFAULT_ADDRESS),
     ):
         metadata = sp.big_map(
             l = {
@@ -80,7 +80,7 @@ class DAOContract(sp.Contract):
                 next_proposal_id = sp.TNat,
                 vote_tracker = sp.TBigMap(VoteTracker.KEY_TYPE, VoteTracker.VALUE_TYPE),
                 historical_outcomes = sp.TBigMap(sp.TNat, ProposalOutcome.PROPOSAL_OUTCOME_TYPE),
-                break_glass_contract = sp.TAddress,
+                break_glass_contract = sp.TOption(sp.TAddress),
                 metadata = sp.TBigMap(sp.TString, sp.TBytes)
             )
         )
@@ -444,7 +444,8 @@ class DAOContract(sp.Contract):
     def veto_timelock(self, unit):
         sp.set_type(unit, sp.TUnit)
 
-        sp.verify(sp.sender == self.data.break_glass_contract, Errors.ERROR_NOT_ALLOWED)
+        break_glass_contract = sp.local("break_glass_contract", self.data.break_glass_contract.open_some(message=Errors.ERROR_NO_BREAK_GLASS_CONTRACT_SET))
+        sp.verify(sp.sender == break_glass_contract.value, Errors.ERROR_NOT_ALLOWED)
         timelock = sp.local("timelock", self.data.timelock.open_some(message=Errors.ERROR_NO_ITEM_IN_TIMELOCK))
         sp.verify(sp.level < timelock.value.execution_start_block, Errors.ERROR_TOO_LATE)
 
@@ -470,7 +471,12 @@ class DAOContract(sp.Contract):
     @sp.entry_point(check_no_incoming_transfer=True)
     def set_governance_params(self, params):
         sp.set_type(params, GovernanceParams.GOVERNANCE_PARAMS_TYPE)
-        sp.verify((sp.sender == sp.self_address) | (sp.sender == self.data.break_glass_contract), Errors.ERROR_NOT_ALLOWED)
+        with sp.if_(self.data.break_glass_contract.is_some()):
+            break_glass_contract = sp.local("break_glass_contract", self.data.break_glass_contract.open_some(message=Errors.ERROR_NO_BREAK_GLASS_CONTRACT_SET))
+            sp.verify((sp.sender == sp.self_address) | (sp.sender == break_glass_contract.value), Errors.ERROR_NOT_ALLOWED)
+        with sp.else_():
+            sp.verify(sp.sender == sp.self_address, Errors.ERROR_NOT_ALLOWED)
+
         self.data.governance_params = params
 
     """
@@ -487,6 +493,21 @@ class DAOContract(sp.Contract):
         sp.set_type(community_fund_address, sp.TAddress)
         sp.verify(sp.sender == sp.self_address, Errors.ERROR_NOT_ALLOWED)
         self.data.community_fund_address = community_fund_address
+
+    """
+    Updates the break glass contract for the DAO.
+    Requirements:
+        - Sender is the contract itself.
+    Params:
+        - break_glass_contract (sp.TOption(sp.TAddress)): The new break_glass_contract of the DAO.
+    Effects:
+        - Updates the break_glass_contract of the DAO.
+    """
+    @sp.entry_point(check_no_incoming_transfer=True)
+    def set_break_glass_contract(self, break_glass_contract):
+        sp.set_type(break_glass_contract, sp.TOption(sp.TAddress))
+        sp.verify(sp.sender == sp.self_address, Errors.ERROR_NOT_ALLOWED)
+        self.data.break_glass_contract = break_glass_contract
     
     """
     Returns the stats (number of yes/no/abstain) of the current poll.
