@@ -92,3 +92,6 @@ ERROR_TOO_MANY_STAKES_TO_RETURN = "TOO_MANY_STAKES_TO_RETURN"
 
 # The requester vote data is not found.
 ERROR_MUST_VOTE_FIRST = "MUST_VOTE_FIRST"
+
+# The contract has not break glass contract set.
+ERROR_NO_BREAK_GLASS_CONTRACT_SET = "NO_BREAK_GLASS_CONTRACT_SET"

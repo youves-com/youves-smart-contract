@@ -11,6 +11,8 @@ ORACLE_COMPILATIONS := $(filter-out %/__init__.py, $(wildcard compilations/oracl
 ORACLE_TESTS := $(filter-out %/__init__.py, $(wildcard tests/oracle/*.py))
 TRACKER_COMPILATIONS := $(filter-out %/__init__.py, $(wildcard compilations/tracker/*.py))
 TRACKER_TESTS := $(filter-out %/__init__.py, $(wildcard tests/tracker/*.py))
+DAO_COMPILATIONS := $(filter-out %/__init__.py, $(wildcard compilations/dao/*.py))
+DAO_TESTS := $(filter-out %/__init__.py, $(wildcard tests/dao/*.py))
 
 touch_done=@mkdir -p $(@D) && touch $@;
 
@@ -32,6 +34,9 @@ compile-swap-contracts:
 	@compilations/swap/all.sh $(shell pwd)/contracts/swap $(shell pwd)/$(SNAPSHOTS_FOLDER)/compilation/swap
 	@echo "Compiled swap contracts."
 
+compile-dao-contracts: $(DAO_COMPILATIONS:%.py=%) setup_env
+	@echo "Compiled DAO contracts."
+
 compile-contracts: compile-oracle-contracts compile-tracker-contracts compile-swap-contracts
 ##
 ## - Compilations
@@ -49,12 +54,15 @@ test-oracle-contracts: $(ORACLE_TESTS:%.py=%) setup_env
 test-tracker-contracts: $(TRACKER_TESTS:%.py=%) setup_env
 	@echo "Tested tracker contracts."
 
+test-dao-contracts: $(DAO_TESTS:%.py=%) setup_env
+	@echo "Tested DAO contracts."
+
 # TODO: Fix test (types are not matching)
 test-swap-contracts:
 	@tests/swap/all.sh $(shell pwd)/contracts/swap $(shell pwd)/$(SNAPSHOTS_FOLDER)/test/swap
 	@echo "Tested swap contracts."
 
-test-contracts: test-oracle-contracts test-tracker-contracts
+test-contracts: test-oracle-contracts test-tracker-contracts test-swap-contracts
 ##
 ## - Tests
 ##
@@ -96,11 +104,11 @@ clean:
 install-smartpy: $(BUILD_FOLDER)/install-smartpy
 $(BUILD_FOLDER)/install-smartpy:
 	@rm -rf $(SMARTPY_CLI_PATH)
-	@bash -c "bash <(curl -s https://smartpy.io/cli/install.sh) --prefix $(SMARTPY_CLI_PATH) --yes"
+	@bash -c "bash <(curl -s https://smartpy.io/releases/20220819-a1f12855a0f6348c6e5a7a209dfb48cba81b10db/cli/install.sh) --prefix $(SMARTPY_CLI_PATH) --yes"
 	$(touch_done)
 
 install-dependencies: install-smartpy
-	@pip install -r requirements.txt --quiet
+	@pip3 install -r requirements.txt --quiet
 ##
 ## - Install dependencies
 ##
