@@ -1,169 +1,182 @@
-type transfer =
-  [@layout:comb]
-  { [@annot:from] address_from : address;
-    [@annot:to] address_to : address;
-    value : nat }
+let error_NOT_ENOUGH_BALANCE = "NotEnoughBalance"
+let error_NOT_ENOUGH_ALLOWANCE = "NotEnoughAllowance"
+let error_VULNERABLE_OPERATION = "UnsafeAllowanceChange"
+let error_ADMIN_ONLY = "OnlyAdminAllowed"
+let error_BURN_AMOUNT_EXCEEDING_FUNDS = "BurnAmountExceedingFunds"
+let error_TEZ_NOT_ALLOWED = "TezNotAllowed"
 
-type approve =
-  [@layout:comb]
-  { spender : address;
-    value : nat }
 
-type mintOrBurn =
-  [@layout:comb]
-  { quantity : int ;
-    target : address }
+type allowance = (address, nat) map
+type ledger = (address, (nat * allowance)) big_map
+type transfer = (address * (address * nat))
+type approve = address * nat
+type mintOrBurn = [@layout:comb] {
+    quantity : int ;
+    target : address 
+}
+type getAllowance = ((address * address) * nat contract)
+type getBalance = address * nat contract 
+type getTotalSupply = (unit * nat contract)
+type single_token_metadata = {
+    token_id : nat;
+    token_info : (string, bytes) map;
+}
+type token_metadata = (nat, single_token_metadata) big_map
+type metadata = (string, bytes) big_map
 
-type allowance_key =
-  [@layout:comb]
-  { owner : address;
-    spender : address }
-
-type getAllowance =
-  [@layout:comb]
-  { request : allowance_key;
-    callback : nat contract }
-
-type getBalance =
-  [@layout:comb]
-  { owner : address;
-    callback : nat contract }
-
-type getTotalSupply =
-  [@layout:comb]
-  { request : unit ;
-    callback : nat contract }
-
-type tokens = (address, nat) big_map
-type allowances = (allowance_key, nat) big_map
-
-type token_id = nat
-type token_info = (string, bytes) map
-type token_metadata = (nat, token_id * token_info) big_map
-
-type storage =
-  [@layout:comb]
-  { tokens : tokens;
-    allowances : allowances;
+type storage = {
     admin : address;
-    total_supply : nat;
+    ledger : ledger;
     token_metadata : token_metadata;
-  }
+    total_supply : nat;
+    metadata : metadata;
+   }
 
-type parameter =
-  | Transfer of transfer
-  | Approve of approve
-  | MintOrBurn of mintOrBurn
-  | GetAllowance of getAllowance
-  | GetBalance of getBalance
-  | GetTotalSupply of getTotalSupply
+type parameter = 
+| Transfer of transfer 
+| Approve of approve 
+| GetAllowance of getAllowance 
+| GetBalance of getBalance 
+| GetTotalSupply of getTotalSupply
+| MintOrBurn of mintOrBurn
 
-type result = operation list * storage
+let get_allowed_amount (a:allowance) (spender:address) : nat =
+    match Map.find_opt spender a with
+    | Some v -> v 
+    | None -> 0n
 
-[@inline]
-let maybe (n : nat) : nat option =
-  if n = 0n
-  then (None : nat option)
-  else Some n
+let set_allowed_amount (a:allowance) (spender:address) (allowed_amount: nat) : allowance =
+        Map.add spender allowed_amount a
 
-let transfer (param : transfer) (storage : storage) : result =
-  let allowances = storage.allowances in
-  let tokens = storage.tokens in
-  let allowances =
-    if (Tezos.get_sender ()) = param.address_from
-    then allowances
+let decrease_allowance (a:allowance) (spender:address) (allowed_amount: nat) : allowance =
+    match Map.find_opt spender a with
+    | Some v -> 
+        let _ = assert_with_error(v >= allowed_amount) error_NOT_ENOUGH_ALLOWANCE in
+        let new_allowed_amount = abs(v - allowed_amount) in
+        if new_allowed_amount > 0n then
+            Map.update spender (Some(new_allowed_amount)) a
+        else
+            Map.remove spender a
+    | None -> failwith(error_NOT_ENOUGH_ALLOWANCE)
+
+let get_for_user (ledger:ledger) (owner: address) : (nat * allowance) =
+    match Big_map.find_opt owner ledger with
+    | Some tokens -> tokens
+    | None -> (0n, (Map.empty : allowance))
+
+let update_for_user (ledger:ledger) (owner: address) (amount_ : nat) (allowances : allowance) : ledger =
+    Big_map.update owner (Some (amount_,allowances)) ledger
+
+let set_approval (ledger:ledger) (owner: address) (spender : address) (allowed_amount: nat) : ledger =
+      let (tokens, allowances) = get_for_user ledger owner in
+      let previous_allowances = get_allowed_amount allowances spender in
+      let _ = assert_with_error (previous_allowances = 0n || allowed_amount = 0n) error_VULNERABLE_OPERATION in
+      let allowances = set_allowed_amount allowances spender allowed_amount in
+      let ledger = update_for_user ledger owner tokens allowances in
+      ledger
+
+let decrease_token_amount_for_user (ledger : ledger) (spender : address) (from_ : address) (amount_ : nat) : ledger =
+    let (tokens, allowances) = get_for_user ledger from_ in
+    let allowed_amount = if (spender = from_) then 
+        tokens
     else
-      let allowance_key = { owner = param.address_from ; spender = (Tezos.get_sender ()) } in
-      let authorized_value =
-        match Big_map.find_opt allowance_key allowances with
-        | Some value -> value
-        | None -> 0n in
-      let authorized_value =
-        match is_nat (authorized_value - param.value) with
-        | None -> (failwith "NotEnoughAllowance" : nat)
-        | Some authorized_value -> authorized_value in
-      Big_map.update allowance_key (maybe authorized_value) allowances in
-  let tokens =
-    let from_balance =
-      match Big_map.find_opt param.address_from tokens with
-      | Some value -> value
-      | None -> 0n in
-    let from_balance =
-      match is_nat (from_balance - param.value) with
-      | None -> (failwith "NotEnoughBalance" : nat)
-      | Some from_balance -> from_balance in
-    Big_map.update param.address_from (maybe from_balance) tokens in
-  let tokens =
-    let to_balance =
-      match Big_map.find_opt param.address_to tokens with
-      | Some value -> value
-      | None -> 0n in
-    let to_balance = to_balance + param.value in
-    Big_map.update param.address_to (maybe to_balance) tokens in
-  (([] : operation list), { storage with tokens = tokens; allowances = allowances })
+        get_allowed_amount allowances spender 
+    in
+    let _ = assert_with_error (tokens >= amount_) error_NOT_ENOUGH_BALANCE in
+    //  TZIP-7 specifies that it should fail with requested allowance and current allowance
+    let _ = if (allowed_amount < amount_) then
+        ([%Michelson ({| { FAILWITH } |} : string * (nat * nat) -> unit)]
+            (error_NOT_ENOUGH_ALLOWANCE, (amount_, allowed_amount)) : unit)
+    else 
+        () 
+    in
+    let tokens = abs(tokens - amount_) in
+    let allowances = decrease_allowance allowances spender amount_ in
+    let ledger = update_for_user ledger from_ tokens allowances in
+    ledger
 
-let approve (param : approve) (storage : storage) : result =
-  let allowances = storage.allowances in
-  let allowance_key = { owner = (Tezos.get_sender ()) ; spender = param.spender } in
-  let previous_value =
-    match Big_map.find_opt allowance_key allowances with
-    | Some value -> value
-    | None -> 0n in
-  begin
-    if previous_value > 0n && param.value > 0n
-    then (failwith "UnsafeAllowanceChange")
-    else ();
-    let allowances = Big_map.update allowance_key (maybe param.value) allowances in
-    (([] : operation list), { storage with allowances = allowances })
-  end
+let increase_token_amount_for_user (ledger : ledger) (to_ : address) (amount_ : nat) : ledger =
+    let (tokens, allowances) = get_for_user ledger to_ in
+    let tokens = tokens + amount_ in
+    let ledger = update_for_user ledger to_ tokens allowances in
+    ledger
 
-let mintOrBurn (param : mintOrBurn) (storage : storage) : result =
+let get_amount_for_owner (s:storage) (owner : address) : nat =
+    let (amount_, _) = get_for_user s.ledger owner in
+    amount_
+
+let get_allowances_for_owner (s:storage) (owner : address) : allowance =
+    let (_, allowances) = get_for_user s.ledger owner in
+    allowances
+
+let get_ledger (s:storage) : ledger = s.ledger
+
+let set_ledger (s:storage) (ledger:ledger) : storage =
+    {s with ledger=ledger}
+
+let transfer ((from_, to_value), s : transfer * storage) : operation list * storage =
+   let (to_, value) = to_value in
+   let ledger1 = get_ledger s in
+   let ledger2 = decrease_token_amount_for_user ledger1 (Tezos.get_sender ()) from_ value in
+   let ledger = increase_token_amount_for_user ledger2 to_ value in
+   let s1 = set_ledger s ledger in
+   (([] : operation list), s1)
+
+// /** approve */
+let approve ((spender,value), s : approve * storage) : operation list * storage =
+   let ledger1 = get_ledger s in
+   let ledger = set_approval ledger1 (Tezos.get_sender ()) spender value in
+   let s1 = set_ledger s ledger in
+   (([] : operation list), s1)
+
+// /** getAllowance entrypoint */
+let getAllowance ((owner_spender,callback), s: getAllowance * storage) : operation list * storage =
+   let (owner,spender) = owner_spender in
+   let a = get_allowances_for_owner s owner in
+   let allowed_amount = get_allowed_amount a spender in
+   let operation = Tezos.transaction allowed_amount 0tez callback in
+   ([operation], s)
+
+// /** getBalance entrypoint */
+let getBalance ((owner,callback), s : getBalance * storage) : operation list * storage =
+   let balance_ = get_amount_for_owner s owner in
+   let operation = Tezos.transaction balance_ 0tez callback in
+   ([operation], s)
+
+// /** getTotalSupply entrypoint */
+let getTotalSupply ((_,callback), s : getTotalSupply * storage) : operation list * storage =
+   let operation = Tezos.transaction s.total_supply 0tez callback in
+   ([operation], s)
+
+// /** mintOrBurn entrypoint */
+let mintOrBurn (param, s: mintOrBurn * storage) : operation list * storage =
   begin
-    if (Tezos.get_sender ()) <> storage.admin
-    then failwith "OnlyAdmin"
+    if (Tezos.get_sender ()) <> s.admin
+    then failwith error_ADMIN_ONLY
     else ();
-    let tokens = storage.tokens in
-    let old_balance =
-      match Big_map.find_opt param.target tokens with
-      | None -> 0n
+    let ledger = get_ledger s in
+    let (old_balance, allowances) = get_for_user ledger param.target in
+    let new_balance = match is_nat (old_balance + param.quantity) with
+      | None -> (failwith error_BURN_AMOUNT_EXCEEDING_FUNDS : nat)
       | Some bal -> bal in
-    let new_balance =
-      match is_nat (old_balance + param.quantity) with
-      | None -> (failwith "Cannot burn more than the target's balance." : nat)
-      | Some bal -> bal in
-    let tokens = Big_map.update param.target (maybe new_balance) storage.tokens in
-    let total_supply = abs (storage.total_supply + param.quantity) in
-    (([] : operation list), { storage with tokens = tokens ; total_supply = total_supply })
+    let ledger = update_for_user ledger param.target new_balance allowances in
+    let total_supply = match is_nat (s.total_supply + param.quantity) with
+        | None -> (failwith error_BURN_AMOUNT_EXCEEDING_FUNDS : nat)
+        | Some val -> val in
+    (([] : operation list), { s with ledger = ledger ; total_supply = total_supply })
   end
 
-let getAllowance (param : getAllowance) (storage : storage) : operation list =
-  let value =
-    match Big_map.find_opt param.request storage.allowances with
-    | Some value -> value
-    | None -> 0n in
-  [Tezos.transaction value 0mutez param.callback]
 
-let getBalance (param : getBalance) (storage : storage) : operation list =
-  let value =
-    match Big_map.find_opt param.owner storage.tokens with
-    | Some value -> value
-    | None -> 0n in
-  [Tezos.transaction value 0mutez param.callback]
-
-let getTotalSupply (param : getTotalSupply) (storage : storage) : operation list =
-  let total = storage.total_supply in
-  [Tezos.transaction total 0mutez param.callback]
-
-let main (param, storage : parameter * storage) : result =
-  begin
-    if Tezos.get_amount () <> 0mutez
-    then failwith "DontSendTez"
-    else ();
-    match param with
-    | Transfer param -> transfer param storage
-    | Approve param -> approve param storage
-    | MintOrBurn param -> mintOrBurn param storage
-    | GetAllowance param -> (getAllowance param storage, storage)
-    | GetBalance param -> (getBalance param storage, storage)
-    | GetTotalSupply param -> (getTotalSupply param storage, storage)
-  end
+let main ((parameter, storage) : parameter * storage) : operation list * storage =
+    begin
+        if Tezos.get_amount () <> 0mutez
+        then failwith error_TEZ_NOT_ALLOWED
+        else ();
+        match parameter with
+        | Transfer param -> transfer (param, storage)
+        | Approve param -> approve (param, storage)
+        | GetAllowance param -> getAllowance (param, storage)
+        | GetBalance param -> getBalance (param, storage)
+        | GetTotalSupply param -> getTotalSupply (param, storage)
+        | MintOrBurn param -> mintOrBurn (param, storage)
+    end
