@@ -51,8 +51,9 @@ let set_allowed_amount (a:allowance) (spender:address) (allowed_amount: nat) : a
 let decrease_allowance (a:allowance) (spender:address) (allowed_amount: nat) : allowance =
     match Map.find_opt spender a with
     | Some v -> 
-        let _ = assert_with_error(v >= allowed_amount) error_NOT_ENOUGH_ALLOWANCE in
-        let new_allowed_amount = abs(v - allowed_amount) in
+        let new_allowed_amount = match is_nat (v - allowed_amount) with
+            | None -> (failwith error_NOT_ENOUGH_ALLOWANCE : nat)
+            | Some val -> val in
         if new_allowed_amount > 0n then
             Map.update spender (Some(new_allowed_amount)) a
         else
@@ -90,7 +91,10 @@ let decrease_token_amount_for_user (ledger : ledger) (spender : address) (from_ 
     else 
         () 
     in
-    let tokens = abs(tokens - amount_) in
+    let tokens = match is_nat (tokens - amount_) with
+        | None -> ([%Michelson ({| { FAILWITH } |} : string * (nat * nat) -> nat)]
+            (error_NOT_ENOUGH_ALLOWANCE, (amount_, tokens)) : nat)
+        | Some val -> val in
     let allowances = decrease_allowance allowances spender amount_ in
     let ledger = update_for_user ledger from_ tokens allowances in
     ledger
