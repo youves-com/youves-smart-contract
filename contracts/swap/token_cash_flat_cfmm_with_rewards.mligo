@@ -1,10 +1,10 @@
 (* Pick one of CASH_IS_FA2, CASH_IS_FA12*)
-// #define CASH_IS_FA2
-#define CASH_IS_FA12
+#define CASH_IS_FA2
+// #define CASH_IS_FA12
 
 (* Pick one of TOKEN_IS_FA12, TOKEN_IS_FA2 *)
-// #define TOKEN_IS_FA2
-#define TOKEN_IS_FA12
+#define TOKEN_IS_FA2
+//#define TOKEN_IS_FA12
 
 (* ============================================================================
  * Useful types
@@ -264,8 +264,7 @@ let add_liquidity (param: add_liquidity) (storage: storage) : result =
 
     let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
     let internal_param = (param, Tezos.get_sender ()) in
-    let amount = (Tezos.get_amount ()) in
-    let internal_call_operation = (Tezos.transaction internal_param amount internal_call_ep) in
+    let internal_call_operation = (Tezos.transaction internal_param 0mutez internal_call_ep) in
 
     ([update_pools_operation; internal_call_operation], storage) 
 
@@ -320,8 +319,7 @@ let remove_liquidity (param: remove_liquidity) (storage: storage) : result =
 
     let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
     let internal_param = (param, Tezos.get_sender ()) in
-    let amount = (Tezos.get_amount ()) in
-    let internal_call_operation = (Tezos.transaction internal_param amount internal_call_ep) in
+    let internal_call_operation = (Tezos.transaction internal_param 0mutez internal_call_ep) in
 
     ([update_pools_operation; internal_call_operation], storage) 
 
@@ -461,8 +459,7 @@ let cash_to_token (param: cash_to_token) (storage: storage) : result =
 
     let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
     let internal_param = (param, Tezos.get_sender ()) in
-    let amount = (Tezos.get_amount ()) in
-    let internal_call_operation = (Tezos.transaction internal_param amount internal_call_ep) in
+    let internal_call_operation = (Tezos.transaction internal_param 0mutez internal_call_ep) in
 
     ([update_pools_operation; internal_call_operation], storage) 
 
@@ -483,7 +480,14 @@ let cash_to_token_internal (param : cash_to_token) (sender : address) (storage :
         (failwith error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_THE_CONTRACT : result)
     else begin
         (* We don't check that cashPool > 0, because that is impossible unless all liquidity has been removed. *)
-        let totalTokensBought = tokensBought storage.cashPool storage.cashMultiplier storage.tokenPool storage.tokenMultiplier cashSold in
+        let token_price_in_cash_opt : nat option = Tezos.call_view "get_token_price_in_cash" () storage.targetPriceOracle in
+        let token_price_in_cash = match token_price_in_cash_opt with
+            | None -> (failwith error_MISSING_ORACLE_VIEW : nat)
+            | Some price -> price
+        in
+        let cashMultiplier = storage.cashMultiplier * price_precision_factor in
+        let tokenMultiplier = storage.tokenMultiplier * token_price_in_cash in
+        let totalTokensBought = tokensBought storage.cashPool cashMultiplier storage.tokenPool tokenMultiplier cashSold in
         let tokensBought = (
             let bought = storage.feeRatio.numerator * totalTokensBought / storage.feeRatio.denominator in
             if bought < minTokensBought then
@@ -520,8 +524,7 @@ let token_to_cash (param: token_to_cash) (storage: storage) : result =
 
     let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
     let internal_param = (param, Tezos.get_sender ()) in
-    let amount = (Tezos.get_amount ()) in
-    let internal_call_operation = (Tezos.transaction internal_param amount internal_call_ep) in
+    let internal_call_operation = (Tezos.transaction internal_param 0mutez internal_call_ep) in
 
     ([update_pools_operation; internal_call_operation], storage) 
 
@@ -542,7 +545,14 @@ let token_to_cash_internal (param : token_to_cash) (sender : address) (storage :
         (failwith error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_THE_CONTRACT : result)
     else
         (* We don't check that tokenPool > 0, because that is impossible unless all liquidity has been removed. *)
-        let totalCashBought = cashBought storage.cashPool storage.cashMultiplier storage.tokenPool storage.tokenMultiplier tokensSold in
+        let token_price_in_cash_opt : nat option = Tezos.call_view "get_token_price_in_cash" () storage.targetPriceOracle in
+        let token_price_in_cash = match token_price_in_cash_opt with
+            | None -> (failwith error_MISSING_ORACLE_VIEW : nat)
+            | Some price -> price
+        in
+        let cashMultiplier = storage.cashMultiplier * price_precision_factor in
+        let tokenMultiplier = storage.tokenMultiplier * token_price_in_cash in
+        let totalCashBought = cashBought storage.cashPool cashMultiplier storage.tokenPool tokenMultiplier tokensSold in
         let cashBought = (
             let bought = storage.feeRatio.numerator * totalCashBought / storage.feeRatio.denominator in
                 if bought < minCashBought then 
@@ -623,7 +633,6 @@ let update_pools (storage : storage) : result =
                 | Some contract -> contract) in
         let op_cash = Tezos.transaction ((Tezos.get_self_address ()), update_cash_pool_internal) 0mutez cash_get_balance in
 #else
-        let update_cash_pool_internal : update_cash_pool_internal contract = Tezos.self "%updateCashPoolInternal" in
         let cash_balance_of : balance_of contract = 
             (match (Tezos.get_entrypoint_opt "%balance_of" storage.cashAddress : balance_of contract option) with
                 | None -> (failwith error_INVALID_FA2_CASH_CONTRACT_MISSING_GETBALANCE : balance_of contract)
@@ -733,7 +742,6 @@ let fetch_lqt_token_price_in_cash (callback : price_callback) (storage : storage
 [@view] let tokensPool((), storage : unit * storage) : nat = (storage.tokenPool)
 [@view] let cashPool((), storage : unit * storage) : nat = (storage.cashPool)
 [@view] let liquidityTotal((), storage : unit * storage) : nat = (storage.lqtTotal)
-[@view] let lqtPriceInCashLazyCalculated((), storage : unit * storage) : nat = (calculate_lqt_price_in_cash storage.tokenPool storage.tokenMultiplier storage.cashPool storage.cashMultiplier storage.lqtTotal storage.targetPriceOracle)
 (* View to calculate the price of the LQT token in the cash token (e.g. 1LQT = 1.2 cash tokens)
    NOTE: The price returned by the view might not be the correct one as the balances might not
    be updated yet (for up to date prices, we recommend using the callback equivalent of this view

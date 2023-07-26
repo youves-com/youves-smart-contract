@@ -124,9 +124,9 @@ type mintOrBurn = [@layout:comb] {
  * Error codes
  * ============================================================================= *)
 [@inline] let error_TOKEN_CONTRACT_MUST_HAVE_A_TRANSFER_ENTRYPOINT  = 0n
-[@inline] let error_ASSERTION_VIOLATED_CASH_BOUGHT_SHOULD_BE_LESS_THAN_CASHPOOL = 1n
+[@inline] let error_ASSERTION_VIOLATED_EXCEEDING_POOL_RESOURCES = 1n
 [@inline] let error_ASSERTION_VIOLATED_NEGATIVE_DIFFERENCE = 2n
-[@inline] let error_THE_CURRENT_TIME_MUST_BE_LESS_THAN_THE_DEADLINE = 3n
+[@inline] let error_DEADLINE_EXCEEDED = 3n
 [@inline] let error_MAX_TOKENS_DEPOSITED_MUST_BE_GREATER_THAN_OR_EQUAL_TO_TOKENS_DEPOSITED = 4n
 [@inline] let error_LQT_MINTED_MUST_BE_GREATER_THAN_MIN_LQT_MINTED = 5n
 [@inline] let error_PENDING_POOL_UPDATES_MUST_BE_ZERO = 6n
@@ -158,8 +158,8 @@ type mintOrBurn = [@layout:comb] {
 [@inline] let error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_GETBALANCE_OF_TOKENADDRESS = 29n
 [@inline] let error_INVALID_FA2_BALANCE_RESPONSE = 30n
 [@inline] let error_INVALID_INTERMEDIATE_CONTRACT = 31n
-[@inline] let error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_GETBALANCE_OF_CASHADDRESS = 30n
-[@inline] let error_TEZ_DEPOSIT_WOULD_BE_BURNED = 32n
+[@inline] let error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_GETBALANCE_OF_CASHADDRESS = 32n
+[@inline] let error_TEZ_DEPOSIT_WOULD_BE_BURNED = 33n
 [@inline] let error_INVALID_RECEIVER = 35n
 [@inline] let error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_THE_CONTRACT = 36n
 [@inline] let error_MISSING_ORACLE_VIEW = 37n
@@ -249,7 +249,7 @@ let add_liquidity_internal (param : add_liquidity) (sender : address) (storage: 
     if storage.pendingPoolUpdates > 0n then
         (failwith error_PENDING_POOL_UPDATES_MUST_BE_ZERO : result)
     else if Tezos.get_now () >= deadline then
-        (failwith error_THE_CURRENT_TIME_MUST_BE_LESS_THAN_THE_DEADLINE : result)
+        (failwith error_DEADLINE_EXCEEDED : result)
     else if Tezos.get_sender () <> Tezos.get_self_address () then
         (failwith error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_THE_CONTRACT : result)
     else
@@ -270,7 +270,6 @@ let add_liquidity_internal (param : add_liquidity) (sender : address) (storage: 
             let storage = { storage with
                 lqtTotal  = storage.lqtTotal + lqtMinted ;
                 tokenPool = storage.tokenPool + tokensDeposited ;
-                cashPool  = cashPool + cashDeposited
             } in
 
             (* send tokens from sender to self *)
@@ -282,15 +281,18 @@ let add_liquidity_internal (param : add_liquidity) (sender : address) (storage: 
 let remove_liquidity (param: remove_liquidity) (storage: storage) : result =
     (* Entrypoint to remove liqduity to the CFMM. First the pools of the CFMM are updated with the latest
     values and then the liquidity is removed from the contract *)
-    let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
-    let internal_call_ep: (remove_liquidity * address) contract = Tezos.self "%removeLiquidityInternal" in
+    if (Tezos.get_amount ()) > 0mutez then
+        (failwith error_AMOUNT_MUST_BE_ZERO : result)
+    else begin
+        let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
+        let internal_call_ep: (remove_liquidity * address) contract = Tezos.self "%removeLiquidityInternal" in
 
-    let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
-    let internal_param = (param, Tezos.get_sender ()) in
-    let amount = (Tezos.get_amount ()) in
-    let internal_call_operation = (Tezos.transaction internal_param amount internal_call_ep) in
+        let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
+        let internal_param = (param, Tezos.get_sender ()) in
+        let internal_call_operation = (Tezos.transaction internal_param 0mutez internal_call_ep) in
 
-    ([update_pools_operation; internal_call_operation], storage) 
+        ([update_pools_operation; internal_call_operation], storage) 
+    end
 
 let remove_liquidity_internal (param : remove_liquidity) (sender : address) (storage : storage) : result =
     (* Removes liquidity to the contract by burning lqt. *)
@@ -305,9 +307,7 @@ let remove_liquidity_internal (param : remove_liquidity) (sender : address) (sto
     if storage.pendingPoolUpdates > 0n then
         (failwith error_PENDING_POOL_UPDATES_MUST_BE_ZERO : result)
     else if Tezos.get_now () >= deadline then
-        (failwith error_THE_CURRENT_TIME_MUST_BE_LESS_THAN_THE_DEADLINE : result)
-    else if (Tezos.get_amount ()) > 0mutez then
-        (failwith error_AMOUNT_MUST_BE_ZERO : result)
+        (failwith error_DEADLINE_EXCEEDED : result)
     else if Tezos.get_sender () <> Tezos.get_self_address () then
         (failwith error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_THE_CONTRACT : result)
     else begin
@@ -453,7 +453,7 @@ let cash_to_token_internal (param : cash_to_token) (_sender : address) (storage 
     if storage.pendingPoolUpdates > 0n then
         (failwith error_PENDING_POOL_UPDATES_MUST_BE_ZERO : result)
     else if Tezos.get_now () >= deadline then
-        (failwith error_THE_CURRENT_TIME_MUST_BE_LESS_THAN_THE_DEADLINE : result)
+        (failwith error_DEADLINE_EXCEEDED : result)
     else if Tezos.get_sender () <> Tezos.get_self_address () then
         (failwith error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_THE_CONTRACT : result)
     else begin
@@ -463,7 +463,14 @@ let cash_to_token_internal (param : cash_to_token) (_sender : address) (storage 
         let cashPool   : nat = match is_nat (storage.cashPool - cashSold) with
             | None -> (failwith error_ASSERTION_VIOLATED_NEGATIVE_DIFFERENCE : nat)
             | Some val -> val in
-        let totalTokensBought = tokensBought cashPool storage.cashMultiplier storage.tokenPool storage.tokenMultiplier cashSold in
+        let token_price_in_cash_opt : nat option = Tezos.call_view "get_token_price_in_cash" () storage.targetPriceOracle in
+        let token_price_in_cash = match token_price_in_cash_opt with
+            | None -> (failwith error_MISSING_ORACLE_VIEW : nat)
+            | Some price -> price
+        in
+        let cashMultiplier = storage.cashMultiplier * price_precision_factor in
+        let tokenMultiplier = storage.tokenMultiplier * token_price_in_cash in
+        let totalTokensBought = tokensBought cashPool cashMultiplier storage.tokenPool tokenMultiplier cashSold in
         let tokensBought = (
             let bought = storage.feeRatio.numerator * totalTokensBought / storage.feeRatio.denominator in
             if bought < minTokensBought then
@@ -480,7 +487,6 @@ let cash_to_token_internal (param : cash_to_token) (_sender : address) (storage 
 
         (* Update cashPool. *)
         let storage = { storage with 
-            cashPool = cashPool + cashSold ; 
             tokenPool = newTokenPool 
         } in
         (* Send tokens_withdrawn from exchange to sender. *)
@@ -495,15 +501,18 @@ let cash_to_token_internal (param : cash_to_token) (_sender : address) (storage 
 let token_to_cash (param: token_to_cash) (storage: storage) : result =
     (* Swaps tokens to cash. First the pools of the CFMM are updated with the latest values, then
     swaps the given tokens to cash and sends it to the receiver. *)
-    let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
-    let internal_call_ep : (token_to_cash * address) contract = Tezos.self "%tokenToCashInternal" in
+    if (Tezos.get_amount ()) > 0mutez then
+        (failwith error_AMOUNT_MUST_BE_ZERO : result)
+    else begin
+        let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
+        let internal_call_ep : (token_to_cash * address) contract = Tezos.self "%tokenToCashInternal" in
 
-    let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
-    let internal_param = (param, Tezos.get_sender ()) in
-    let amount = (Tezos.get_amount ()) in
-    let internal_call_operation = (Tezos.transaction internal_param amount internal_call_ep) in
+        let update_pools_operation =  (Tezos.transaction () 0mutez update_pools_ep) in
+        let internal_param = (param, Tezos.get_sender ()) in
+        let internal_call_operation = (Tezos.transaction internal_param 0mutez internal_call_ep) in
 
-    ([update_pools_operation; internal_call_operation], storage) 
+        ([update_pools_operation; internal_call_operation], storage) 
+    end
 
 
 let token_to_cash_internal (param : token_to_cash) (sender : address) (storage : storage) =
@@ -518,21 +527,26 @@ let token_to_cash_internal (param : token_to_cash) (sender : address) (storage :
     if storage.pendingPoolUpdates > 0n then
         (failwith error_PENDING_POOL_UPDATES_MUST_BE_ZERO : result)
     else if (Tezos.get_now ()) >= deadline then
-        (failwith error_THE_CURRENT_TIME_MUST_BE_LESS_THAN_THE_DEADLINE : result)
-    else if (Tezos.get_amount ()) > 0mutez then
-        (failwith error_AMOUNT_MUST_BE_ZERO : result)
+        (failwith error_DEADLINE_EXCEEDED : result)
     else if Tezos.get_sender () <> Tezos.get_self_address () then
         (failwith error_THIS_ENTRYPOINT_MAY_ONLY_BE_CALLED_BY_THE_CONTRACT : result)
     else
         (* We don't check that tokenPool > 0, because that is impossible unless all liquidity has been removed. *)
-        let totalCashBought = cashBought storage.cashPool storage.cashMultiplier storage.tokenPool storage.tokenMultiplier tokensSold in
+        let token_price_in_cash_opt : nat option = Tezos.call_view "get_token_price_in_cash" () storage.targetPriceOracle in
+        let token_price_in_cash = match token_price_in_cash_opt with
+            | None -> (failwith error_MISSING_ORACLE_VIEW : nat)
+            | Some price -> price
+        in
+        let cashMultiplier = storage.cashMultiplier * price_precision_factor in
+        let tokenMultiplier = storage.tokenMultiplier * token_price_in_cash in
+        let totalCashBought = cashBought storage.cashPool cashMultiplier storage.tokenPool tokenMultiplier tokensSold in
         let cashBought = (
             let bought = storage.feeRatio.numerator * totalCashBought / storage.feeRatio.denominator in
                 if bought < minCashBought then 
                     (failwith error_CASH_BOUGHT_MUST_BE_GREATER_THAN_OR_EQUAL_TO_MIN_CASH_BOUGHT : nat) 
                 else bought) in
         let rewardRecipientFee = (match is_nat ((totalCashBought - cashBought) / 2) with  (* 50% of the fee goes to *)
-            | None -> (failwith error_ASSERTION_VIOLATED_CASH_BOUGHT_SHOULD_BE_LESS_THAN_CASHPOOL : nat)
+            | None -> (failwith error_ASSERTION_VIOLATED_EXCEEDING_POOL_RESOURCES : nat)
             | Some diff -> diff) in
 
         let cashBoughtInMutez = natural_to_mutez cashBought in
@@ -543,21 +557,25 @@ let token_to_cash_internal (param : token_to_cash) (sender : address) (storage :
             match (Tezos.get_contract_opt to_ : unit contract option) with
                 | None -> (failwith error_INVALID_RECEIVER : unit contract)
                 | Some contract -> contract in
-        let rewardReceiver = 
-            match (Tezos.get_contract_opt storage.rewardRecipient : unit contract option) with
-                | None -> (failwith error_INVALID_RECEIVER : unit contract)
-                | Some contract -> contract in
         let op_cash = Tezos.transaction () cashBoughtInMutez cashReceiver in
-        let op_cash_reward = Tezos.transaction () rewardRecipientFeeInMutez rewardReceiver in
 
         let newCashPool = match is_nat (storage.cashPool - (cashBought + rewardRecipientFee)) with
-            | None -> (failwith error_ASSERTION_VIOLATED_CASH_BOUGHT_SHOULD_BE_LESS_THAN_CASHPOOL : nat)
+            | None -> (failwith error_ASSERTION_VIOLATED_EXCEEDING_POOL_RESOURCES : nat)
             | Some diff -> diff in
         let storage = {storage with 
             tokenPool = storage.tokenPool + tokensSold ;
             cashPool = newCashPool
         } in
-        ([op_token; op_cash; op_cash_reward], storage)
+
+        if rewardRecipientFeeInMutez > 0mutez then
+            let rewardReceiver = 
+                match (Tezos.get_contract_opt storage.rewardRecipient : unit contract option) with
+                    | None -> (failwith error_INVALID_RECEIVER : unit contract)
+                    | Some contract -> contract in
+            let op_cash_reward = Tezos.transaction () rewardRecipientFeeInMutez rewardReceiver in
+            ([op_token; op_cash; op_cash_reward], storage)
+        else
+            ([op_token; op_cash], storage)
 
 let set_reward_recipient (recipient: address) (storage : storage) : result =
     (* Set the recipient of the swap fees. Only an admin can call this entrypoint. *)
@@ -688,21 +706,29 @@ let fetch_lqt_token_price_internal (callback : price_callback) (token_or_cash : 
 
 let fetch_lqt_token_price_in_token (callback : price_callback) (storage : storage) : result =
     (* Calculate the price of the liquidity token and returns it through the provided callback *)
-    let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
-    let fetch_price_ep : (price_callback * token_or_cash) contract = Tezos.self "%fetchLqtTokenPriceInternal" in
+    if (Tezos.get_amount ()) > 0mutez then
+        (failwith error_AMOUNT_MUST_BE_ZERO : result)
+    else begin
+        let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
+        let fetch_price_ep : (price_callback * token_or_cash) contract = Tezos.self "%fetchLqtTokenPriceInternal" in
 
-    let op_update_pools = Tezos.transaction () 0mutez update_pools_ep in
-    let op_internal = Tezos.transaction (callback, Token)  0mutez fetch_price_ep in
-    ([op_update_pools; op_internal], storage) 
+        let op_update_pools = Tezos.transaction () 0mutez update_pools_ep in
+        let op_internal = Tezos.transaction (callback, Token)  0mutez fetch_price_ep in
+        ([op_update_pools; op_internal], storage) 
+    end
 
 let fetch_lqt_token_price_in_cash (callback : price_callback) (storage : storage) : result =
     (* Calculate the price of the liquidity token and returns it through the provided callback *)
-    let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
-    let fetch_price_ep : (price_callback * token_or_cash) contract = Tezos.self "%fetchLqtTokenPriceInternal" in
+    if (Tezos.get_amount ()) > 0mutez then
+        (failwith error_AMOUNT_MUST_BE_ZERO : result)
+    else begin
+        let update_pools_ep : unit contract  = Tezos.self "%updatePools" in
+        let fetch_price_ep : (price_callback * token_or_cash) contract = Tezos.self "%fetchLqtTokenPriceInternal" in
 
-    let op_update_pools = Tezos.transaction () 0mutez update_pools_ep in
-    let op_internal = Tezos.transaction (callback, Cash) 0mutez fetch_price_ep in
-    ([op_update_pools; op_internal], storage) 
+        let op_update_pools = Tezos.transaction () 0mutez update_pools_ep in
+        let op_internal = Tezos.transaction (callback, Cash) 0mutez fetch_price_ep in
+        ([op_update_pools; op_internal], storage) 
+    end
 
 
 (* =============================================================================
@@ -717,14 +743,14 @@ let fetch_lqt_token_price_in_cash (callback : price_callback) (storage : storage
    which does update the pool balances before calculating the price).
    In practice, we don't expect this to happen often because a bot will call the updatePools
    entrypoint every x minutes. *)
-[@view] let lqtPriceInCashLazyCalculated((), storage : unit * storage) : nat = (calculate_lqt_price_in_cash storage.tokenPool storage.tokenMultiplier storage.cashPool storage.cashMultiplier storage.lqtTotal storage.targetPriceOracle)
+[@view] let lazyLqtPriceInCash((), storage : unit * storage) : nat = (calculate_lqt_price_in_cash storage.tokenPool storage.tokenMultiplier storage.cashPool storage.cashMultiplier storage.lqtTotal storage.targetPriceOracle)
 (* View to calculate the price of the LQT token in token (e.g 1LQT = 1.2 tokens)
    NOTE: The price returned by the view might not be the correct one as the balances might not
    be updated yet (for up to date prices, we recommend using the callback equivalent of this view
    which does update the pool balances before calculating the price).
    In practice, we don't expect this to happen often because a bot will call the updatePools
    entrypoint every x minutes. *)
-[@view] let lqtPriceInTokenLazyCalculated((), storage : unit * storage) : nat = (calculate_lqt_price_in_token storage.tokenPool storage.tokenMultiplier storage.cashPool storage.cashMultiplier storage.lqtTotal storage.targetPriceOracle)
+[@view] let lazyLqtPriceInToken((), storage : unit * storage) : nat = (calculate_lqt_price_in_token storage.tokenPool storage.tokenMultiplier storage.cashPool storage.cashMultiplier storage.lqtTotal storage.targetPriceOracle)
 
 (* =============================================================================
  * Main
