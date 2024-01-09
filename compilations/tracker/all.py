@@ -29,6 +29,8 @@ from contracts.tracker.token_collateral_tracker_engine_v3 import (
 from contracts.tracker.tracker_engine import TrackerEngine
 from contracts.tracker.unified_staking_pool import UnifiedStakingPool
 from contracts.tracker.vester import Vester
+from contracts.tracker.commitment_pool_v2 import CommitmentPool
+from utils.contract_utils import Ratio
 
 sp.add_compilation_target("SyntheticAssetToken", AdministrableFA2({}))
 sp.add_compilation_target("GovernanceToken", GovernanceToken(Constants.DEFAULT_ADDRESS))
@@ -229,5 +231,17 @@ sp.add_compilation_target(
         12, # token decimals
         6, # collateral decimals
         administrators=sp.big_map({}),
+    ),
+)
+
+sp.add_compilation_target(
+    "CommitmentPool",
+    CommitmentPool(
+        administrators=sp.big_map(l={}),
+        max_cooldown_duration=sp.nat(4 * 365 * 24 * 60 * 60), # 4 years in seconds
+        max_withdraw_delay=sp.nat(2 * 24 * 60 * 60), # 2 days
+        kicker_reward_ratio=Ratio.make(10, 100), # 10%
+        token_address=Constants.DEFAULT_ADDRESS,
+        token_id=sp.nat(0),
     ),
 )
