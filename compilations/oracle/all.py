@@ -19,6 +19,7 @@ from contracts.oracle.liquidity_pool_oracle import LPPriceOracle, RelativeLPPric
 from contracts.oracle.generic_oracle import PriceOracle
 from contracts.oracle.generic_oracle_v3 import PriceOracle as PriceOracleV3
 from contracts.oracle.exchange_oracle import ExchangeOracle
+from contracts.oracle.multitoken_swap_oracle import MultipoolOracle
 
 sp.add_compilation_target(
     "JobScheduler", JobScheduler(sp.address("tz1e3KTbvFmjfxjfse1RdEg2deoYjqoqgz83"))
@@ -145,3 +146,10 @@ sp.add_compilation_target(
     "ExchangeOracle",
     ExchangeOracle(sp.list([]), sp.nat(1), sp.nat(1), sp.big_map({}), 12, 12)
 )
+
+sp.add_compilation_target(
+    "MultipoolOracle",
+    MultipoolOracle(
+        administrators=sp.big_map({}),
+        price_fetching_lambda=sp.big_map({})
+    ))

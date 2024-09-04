@@ -13,6 +13,8 @@ TRACKER_COMPILATIONS := $(filter-out %/__init__.py, $(wildcard compilations/trac
 TRACKER_TESTS := $(filter-out %/__init__.py, $(wildcard tests/tracker/*.py))
 DAO_COMPILATIONS := $(filter-out %/__init__.py, $(wildcard compilations/dao/*.py))
 DAO_TESTS := $(filter-out %/__init__.py, $(wildcard tests/dao/*.py))
+SWAP_COMPILATIONS := $(filter-out %/__init__.py, $(wildcard compilations/swap/*.py))
+SWAP_TESTS := $(filter-out %/__init__.py, $(wildcard tests/swap/*.py))
 
 touch_done=@mkdir -p $(@D) && touch $@;
 
@@ -30,14 +32,17 @@ compile-oracle-contracts: $(ORACLE_COMPILATIONS:%.py=%) setup_env
 compile-tracker-contracts: $(TRACKER_COMPILATIONS:%.py=%) setup_env
 	@echo "Compiled tracker contracts."
 
-compile-swap-contracts:
+compile-smartpy-swap-contracts: $(SWAP_COMPILATIONS:%.py=%) setup_env
+	@echo "Compiled swap contracts."
+
+compile-ligo-swap-contracts:
 	@compilations/swap/all.sh $(shell pwd)/contracts/swap $(shell pwd)/$(SNAPSHOTS_FOLDER)/compilation/swap
 	@echo "Compiled swap contracts."
 
 compile-dao-contracts: $(DAO_COMPILATIONS:%.py=%) setup_env
 	@echo "Compiled DAO contracts."
 
-compile-contracts: compile-oracle-contracts compile-tracker-contracts compile-swap-contracts
+compile-contracts: compile-oracle-contracts compile-tracker-contracts compile-smartpy-swap-contracts compile-ligo-swap-contracts
 ##
 ## - Compilations
 ##
