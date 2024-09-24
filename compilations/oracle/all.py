@@ -22,6 +22,12 @@ from contracts.oracle.exchange_oracle import ExchangeOracle
 from contracts.oracle.multitoken_swap_oracle import MultipoolOracle
 from contracts.oracle.engine_oracle import EngineOracle, AsyncEngineOracle
 from contracts.oracle.swap_oracle import FlatCurveTargetOracle 
+from contracts.oracle.sirs_oracle import (
+    SirsOracle,
+    RelativeSirsOracle,
+    GenericRelativeSirsOracle
+)
+
 
 sp.add_compilation_target(
     "JobScheduler", JobScheduler(sp.address("tz1e3KTbvFmjfxjfse1RdEg2deoYjqoqgz83"))
@@ -204,5 +210,33 @@ sp.add_compilation_target(
             tkey=sp.TString,
             tvalue=sp.TBytes,
         ),
+    )
+)
+
+sp.add_compilation_target(
+    "SirsOracle",
+    SirsOracle(
+        Constants.DEFAULT_ADDRESS,
+        requires_flip=False,
+        extra_precision_factor=sp.nat(1),
+    ),
+)
+
+sp.add_compilation_target(
+    "RelativeSirsOracle",
+    RelativeSirsOracle(
+        Constants.DEFAULT_ADDRESS,
+        Constants.DEFAULT_ADDRESS,
+        "BTCUSD",
+    )
+)
+
+sp.add_compilation_target(
+    "GenericRelativeSirsOracle",
+    GenericRelativeSirsOracle(
+        symbol_relation_path=sp.list([]),
+        administrators=sp.big_map({}),
+        generic_oracle=Constants.DEFAULT_ADDRESS,
+        sirs_oracle=Constants.DEFAULT_ADDRESS
     )
 )
