@@ -20,6 +20,8 @@ from contracts.oracle.generic_oracle import PriceOracle
 from contracts.oracle.generic_oracle_v3 import PriceOracle as PriceOracleV3
 from contracts.oracle.exchange_oracle import ExchangeOracle
 from contracts.oracle.multitoken_swap_oracle import MultipoolOracle
+from contracts.oracle.engine_oracle import EngineOracle, AsyncEngineOracle
+from contracts.oracle.swap_oracle import FlatCurveTargetOracle 
 
 sp.add_compilation_target(
     "JobScheduler", JobScheduler(sp.address("tz1e3KTbvFmjfxjfse1RdEg2deoYjqoqgz83"))
@@ -153,3 +155,54 @@ sp.add_compilation_target(
         administrators=sp.big_map({}),
         price_fetching_lambda=sp.big_map({})
     ))
+
+sp.add_compilation_target(
+    "FlatCurveTargetOracle",
+    FlatCurveTargetOracle(
+        administrators=sp.big_map({}),
+        aggregation_path=sp.list([]),
+        price_precision_factor=sp.nat(Constants.PRICE_PRECISION_FACTOR),
+    )
+)
+
+sp.add_compilation_target(
+    "EngineOracle",
+    EngineOracle(
+        administrators=sp.big_map({}),
+        aggregation_path=sp.list([]),
+        price_precision_factor=sp.nat(Constants.PRICE_PRECISION_FACTOR),
+        metadata=sp.big_map(
+            l={
+                "": sp.bytes(
+                    "0x74657a6f732d73746f726167653a64617461"
+                ),  # "tezos-storage:data"
+                "data": sp.utils.bytes_of_string(
+                    '{ "name": "Youves Engine Oracle", "authors": ["Youves <contact@youves.com>"], "homepage":  "https://app.youves.com" }'
+                ),
+            },
+            tkey=sp.TString,
+            tvalue=sp.TBytes,
+        ),
+    )
+)
+
+sp.add_compilation_target(
+    "AsyncEngineOracle",
+    AsyncEngineOracle(
+        administrators=sp.big_map({}),
+        aggregation_path=sp.list([]),
+        price_precision_factor=sp.nat(Constants.PRICE_PRECISION_FACTOR),
+        metadata=sp.big_map(
+            l={
+                "": sp.bytes(
+                    "0x74657a6f732d73746f726167653a64617461"
+                ),  # "tezos-storage:data"
+                "data": sp.utils.bytes_of_string(
+                    '{ "name": "Youves Async Engine Oracle", "authors": ["Youves <contact@youves.com>"], "homepage":  "https://app.youves.com" }'
+                ),
+            },
+            tkey=sp.TString,
+            tvalue=sp.TBytes,
+        ),
+    )
+)
